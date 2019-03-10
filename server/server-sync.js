@@ -40,6 +40,15 @@ const store = {
     return this.read().findIndex(todo => todo.id === +id);
   },
 
+  findBiggestTodoId() {
+    maxId = 1;
+    const todos = this.read();
+    todos.forEach(todo => {
+      if (todo.id > maxId) maxId = todo.id;
+    });
+    return maxId + 1;
+  },
+
   todos: []
 };
 
@@ -61,13 +70,6 @@ app.put('/todos/:id', (req, res) => {
   res.json('ok');
 });
 
-app.post('/todos/:id', (req, res) => {
-  let index = store.getIndexById(req.params.id);
-  store.todos[index] = req.body;
-  store.save();
-  res.json('ok');
-});
-
 app.delete('/todos/:id', (req, res) => {
   let index = store.getIndexById(req.params.id);
   delete store.todos[index];
@@ -75,8 +77,10 @@ app.delete('/todos/:id', (req, res) => {
   res.json('ok');
 });
 
-app.post('/todos', (req, res) => {
-  store.todos = req.body;
+app.post('/todos', async (req, res) => {
+  const todo = req.body;
+  todo.id = store.findBiggestTodoId();
+  store.todos.push(todo);
   store.save();
   res.json('ok');
 });
@@ -88,20 +92,3 @@ app.get('/hello', (req, res) => {
 app.listen(port, () => {
   console.log(`Listening at http://localhost: ${port}`);
 });
-
-// // Create HTTP server and listen on port 8000 for requests
-// http
-//   .createServer((request, response) => {
-//     // Set the response HTTP header with HTTP status and Content type
-//     response.writeHead(200, { 'Content-Type': 'text/json' });
-
-//     fs.readFile('todos.json', (err, content) => {
-//       console.log(content);
-//       response.write(content);
-//       response.end();
-//     });
-//   })
-//   .listen(port);
-
-// // Print URL for accessing server
-// console.log('Server running at http://127.0.0.1:' + port);
