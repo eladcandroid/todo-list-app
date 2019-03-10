@@ -2,6 +2,7 @@ const fs = require('fs').promises;
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const fetch = require('node-fetch');
 
 const port = 3000;
 const fileName = './todos.json';
@@ -25,12 +26,12 @@ const store = {
   async read() {
     try {
       await fs.access(fileName);
-      store.todos = JSON.parse((await fs.readFile(fileName)).toString());
+      this.todos = JSON.parse((await fs.readFile(fileName)).toString());
     } catch (e) {
-      store.todos = initialTodos;
+      this.todos = initialTodos;
     }
 
-    return store.todos;
+    return this.todos;
   },
 
   async save() {
@@ -42,12 +43,12 @@ const store = {
       const todos = await this.read();
       return todos.findIndex(todo => todo.id === +id);
     } catch (e) {
-      console.log(e, todos);
+      console.log(`Error: ${e}`);
     }
   },
 
   async getNextTodoId() {
-    maxId = 1;
+    let maxId = 1;
     const todos = await this.read();
     todos.forEach(todo => {
       if (todo.id > maxId) maxId = todo.id;
@@ -62,40 +63,78 @@ app.use(bodyParser.json());
 app.use(cors());
 
 app.get('/todos', async (req, res) => {
-  res.json(await store.read());
+  res.status(200).json(await store.read());
 });
 
 app.get('/todos/:id', async (req, res) => {
   const todos = await store.read();
   const todo = todos.find(todo => todo.id === +req.params.id);
-  res.json(todo);
+  res.status(200).json(todo);
 });
 
 app.post('/todos', async (req, res) => {
+  console.log('req.body', req.body);
   const todo = req.body;
   todo.id = await store.getNextTodoId();
   store.todos.push(todo);
   await store.save();
-  res.json('ok');
+  res.status(200).json(req.body);
 });
 
 app.put('/todos/:id', async (req, res) => {
   const index = await store.getIndexById(req.params.id);
   store.todos[index] = req.body;
   await store.save();
-  res.json('ok');
+  res.status(200).json('ok');
 });
 
 app.delete('/todos/:id', async (req, res) => {
   const index = await store.getIndexById(req.params.id);
   store.todos.splice(index, 1);
   await store.save();
-  res.json('ok');
+  res.status(200).json('ok');
 });
 
 app.get('/hello', async (req, res) => {
-  res.send('world');
+  res.status(200).json('world');
 });
+
+app.get('/test', async (req, res) => {
+  fetch('http://localhost:3000/todos')
+    .then(resp => resp.json()) // Transform the data into json
+    .then(function(data) {
+      res.send(data);
+    });
+});
+
+// TESTS
+app.get('/testGetAsync', async (req, res) => {
+  const fetchResp = await fetch('http://localhost:3000/todos');
+  const json = await fetchResp.json();
+  res.send(json);
+});
+
+app.post('/testPost', async (req, res) => {
+  try {
+    const fetchResp = await fetch('http://localhost:3000/todos', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        title: 'check',
+        completed: false
+      })
+    });
+    const json = await fetchResp.json();
+    res.send(json);
+  } catch (e) {
+    res.send(e);
+  }
+});
+
+
 
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);
