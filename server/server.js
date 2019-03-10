@@ -87,8 +87,8 @@ app.put('/todos/:id', async (req, res) => {
 });
 
 app.delete('/todos/:id', async (req, res) => {
-  let index = await store.getIndexById(req.params.id);
-  delete store.todos[index];
+  const index = await store.getIndexById(req.params.id);
+  store.todos.splice(index, 1);
   await store.save();
   res.json('ok');
 });
