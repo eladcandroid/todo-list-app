@@ -99,22 +99,14 @@ app.get('/hello', async (req, res) => {
   res.status(200).json('world');
 });
 
-app.get('/test', async (req, res) => {
-  fetch('http://localhost:3000/todos')
-    .then(resp => resp.json()) // Transform the data into json
-    .then(function(data) {
-      res.send(data);
-    });
-});
-
 // TESTS
-app.get('/testGetAsync', async (req, res) => {
+app.get('/testGet', async (req, res) => {
   const fetchResp = await fetch('http://localhost:3000/todos');
   const json = await fetchResp.json();
   res.send(json);
 });
 
-app.post('/testPost', async (req, res) => {
+app.get('/testPost', async (req, res) => {
   try {
     const fetchResp = await fetch('http://localhost:3000/todos', {
       method: 'POST',
